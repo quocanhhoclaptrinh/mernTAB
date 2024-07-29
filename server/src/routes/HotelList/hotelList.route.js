@@ -3,6 +3,7 @@ const ListRouter=express.Router()
 const hotelListController=require('./hotelList.controller')
 const Hotel = require('../../models/hotel.model')
 const { authenToken } = require('../../services/jwt')
+
 ListRouter.get('/',async(req,res)=>{
     try{
         const createdHotel=await Hotel.Hotel.find()
@@ -17,7 +18,7 @@ ListRouter.post('/create',authenToken,hotelListController.createHotel)
 //danh sách ksan phải tìm mới có
 ListRouter.get('/search', hotelListController.searchHotel)
 //danh sách khách sạn của 1 chủ nhà xác định bằng lần đăng nhập
-ListRouter.get('/owner',authenToken,hotelListController.getHotelsByOwner)
+ListRouter.get('/:ownerID',authenToken,hotelListController.getHotelsByOwner)
 
 //room
 ListRouter.get('/room',async(req,res)=>{

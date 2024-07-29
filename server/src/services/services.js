@@ -11,52 +11,51 @@ const {
 const { Invoice, Receipt } = require("../models/invoice.model");
 const { reqCancel, refundMoney } = require("../models/reqCancel.model");
 
-async function signUpOwner(newOwner) {
-  return new Promise(async (resolve, rejects) => {
-    const {
-      name,
-      passWord,
-      email,
-      birthDate,
-      phoneNum,
-      address,
-      dueDatePCCC,
-      dueDateKD,
-    } = newOwner;
-    try {
-      const checkAccountExisted = await Account.Account.findOne({
-        email: email,
-      });
-      const isAdmin = await Account.Admin.findOne({
-        email: email,
-      });
-      if (checkAccountExisted !== null || isAdmin != null) {
-        rejects({
-          status: "BAD",
-          message: "Email existed",
-        });
-      }
-      const createdOwner = await Account.Account.create({
-        name,
-        passWord,
-        email,
-        birthDate,
-        phoneNum,
-        address,
-        dueDatePCCC,
-        dueDateKD,
-      });
-      if (createdOwner) {
-        resolve({
-          status: "OK",
-          message: "Succ",
-          data: createdOwner,
-        });
-      }
-    } catch (e) {
-      rejects(e);
-    }
-  });
+const Video = require('../models/Video')
+
+const jwt=require('jsonwebtoken')
+
+
+const { default: mongoose } = require('mongoose');
+
+async function signUpOwner(newOwner){
+    return new Promise(async (resolve,rejects)=>{
+        const{name,passWord,email,birthDate,phoneNum,address,dueDatePCCC,dueDateKD}=newOwner
+        try{
+            const checkAccountExisted=await Account.Account.findOne({
+                email:email
+            })
+            const isAdmin=await Account.Admin.findOne({
+                email:email
+            })
+            if(checkAccountExisted!==null || isAdmin!=null){
+                rejects({
+                    status:'BAD',
+                    message:'Email existed'
+                })
+            }
+            const createdOwner=await Account.Account.create({
+                name,
+                passWord,
+                email,
+                birthDate,
+                phoneNum,
+                address,
+                dueDatePCCC,
+                dueDateKD
+            })
+            if(createdOwner){
+                resolve({
+                    status:'OK',
+                    message:'Succ',
+                    data:createdOwner
+                })
+            }
+        } catch(e){
+            rejects(e)
+        }
+    })
+
 }
 //chung của owner và admin
 async function signInOwner(existedOwner) {
@@ -322,74 +321,118 @@ async function reqCancelRoom(receiptID, cusID) {
 //trên fe cho click đồng ý => accept =true
 //admin handle hủy phòng. ok => đổi trạng thái req, post qua app khác để hoàn tiền
 //ko accept => đổi trạng thái req, trả về cho user
-async function handleCancelRoom(reqCancelID, adminID, accept) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const foundReqCancel = await reqCancel.findOne({
-        _id: reqCancelID,
-      });
-      if (!foundReqCancel) {
-        reject({
-          status: "BAD",
-          message: `There's no reqCancel`,
-        });
-      }
-      const cusID=foundReqCancel.cusID
-      if (accept) {
-        try {
-            foundReqCancel.isAccept = "accepted";
-            foundReqCancel.adminID = adminID;
-            foundReqCancel.dateAccept = new Date();
-            await foundReqCancel.save();
 
-            const refundResponse = await axios.post("/appThanhToan", {
-                orderID: foundReqCancel.receiptID,
-            });
-            if (refundResponse.status === 200 || refundResponse.status === 201) {
-                const newRefund = await refundMoney.create({
-                dateRefund: new Date(),
-                amountRefund: foundReqCancel.amount,
-                cusID: cusID,
-                });
+//T comment lại chứ cái này t không biết conflict j 
+// async function handleCancelRoom(reqCancelID, adminID, accept) {
+//   return new Promise(async (resolve, reject) => {
+//     try {
+//       const foundReqCancel = await reqCancel.findOne({
+//         _id: reqCancelID,
+//       });
+//       if (!foundReqCancel) {
+//         reject({
+//           status: "BAD",
+//           message: `There's no reqCancel`,
+//         });
+//       }
+//       const cusID=foundReqCancel.cusID
+//       if (accept) {
+//         try {
+//             foundReqCancel.isAccept = "accepted";
+//             foundReqCancel.adminID = adminID;
+//             foundReqCancel.dateAccept = new Date();
+//             await foundReqCancel.save();
 
-                await newRefund.save();
+// <<<<<<< main
+//         }catch(e){
+//             console.error('Error in handleCancelRoom - promise:', e);
+//         }
+//     })
+// }
+// //truyền token
+//     function createHotel(newHotel,ownerID){
+//         return new Promise(async(resolve,rejects)=>{
+//             const{address,numberOfRooms,taxCode,companyName,nation,facilityName,businessType,scale,city,minPrice,imgUrl}=newHotel
+//             try{
+//                 console.log(ownerID)
+//                 const checkExistedOwnerID=await Account.Account.findOne({
+//                     _id:ownerID
+//                 })
+//                 if(!checkExistedOwnerID){
+//                     return rejects({
+//                         status:'BAD',
+//                         message:'Owner ID does not exist'
+//                     })
+//                 }
+//                 const createdHotel = await Hotel.Hotel.create({
+//                     address,
+//                     numberOfRooms,
+//                     taxCode,
+//                     companyName,
+//                     nation,
+//                     facilityName,
+//                     businessType,
+//                     scale,
+//                     city,
+//                     minPrice,
+//                     imgUrl,
+//                     ownerID
+//                 });
+//                 if(createdHotel){
+//                     resolve({
+//                     status: 'OK',
+//                     message: 'Hotel created successfully',
+//                     data: createdHotel
+// =======
+//             const refundResponse = await axios.post("/appThanhToan", {
+//                 orderID: foundReqCancel.receiptID,
+//             });
+//             if (refundResponse.status === 200 || refundResponse.status === 201) {
+//                 const newRefund = await refundMoney.create({
+//                 dateRefund: new Date(),
+//                 amountRefund: foundReqCancel.amount,
+//                 cusID: cusID,
+// >>>>>>> main
+//                 });
 
-                return resolve({
-                status: "OK",
-                message: "Refund for customer and change status",
-                data: newRefund,
-                });
-                } else {
-                    //# 2 status trên
-                    return reject({
-                    status: "BAD",
-                    message: "Refund processing failed",
-                    });
-                }
-        } catch (e) {
-          console.error("Error in processing refund:", e);
-        }
-        if (accept==false) {
-            try{
-                foundReqCancel.isAccept = "rejected"
-                foundReqCancel.adminID = adminID;
-                await foundReqCancel.save();
+//                 await newRefund.save();
+
+//                 return resolve({
+//                 status: "OK",
+//                 message: "Refund for customer and change status",
+//                 data: newRefund,
+//                 });
+//                 } else {
+//                     //# 2 status trên
+//                     return reject({
+//                     status: "BAD",
+//                     message: "Refund processing failed",
+//                     });
+//                 }
+//         } catch (e) {
+//           console.error("Error in processing refund:", e);
+//         }
+//         if (accept==false) {
+//             try{
+//                 foundReqCancel.isAccept = "rejected"
+//                 foundReqCancel.adminID = adminID;
+//                 await foundReqCancel.save();
     
-                return resolve({
-                    status: "OK",
-                    message: "Not refund money to cus",
-                    data: foundReqCancel,
-                  });
-            }catch(e){
-                console.error("Error in processing refund where accept==false:", e);
-            }
-        }
-      }
-    } catch (e) {
-      console.error("Error in handleCancelRoom - promise:", e);
-    }
-  });
-}
+//                 return resolve({
+//                     status: "OK",
+//                     message: "Not refund money to cus",
+//                     data: foundReqCancel,
+//                   });
+//             }catch(e){
+//                 console.error("Error in processing refund where accept==false:", e);
+//             }
+//         }
+//       }
+//     } catch (e) {
+//       console.error("Error in handleCancelRoom - promise:", e);
+//     }
+//   });
+// }
 //truyền token
 function createHotel(newHotel, ownerID) {
   return new Promise(async (resolve, rejects) => {
@@ -503,6 +546,7 @@ const searchHotel = async (searchCriteria) => {
     );
     const filteredHotels = availableHotels.filter((hotel) => hotel !== null);
 
+
     return {
       status: "OK",
       message: "Find Hotel successfully",
@@ -524,5 +568,6 @@ module.exports = {
   bookRoom,
   searchHotel,
   reqCancelRoom,
-  handleCancelRoom,
+  // handleCancelRoom,
 };
+
