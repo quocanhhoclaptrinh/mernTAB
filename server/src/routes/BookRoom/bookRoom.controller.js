@@ -1,40 +1,41 @@
-const BookRoomService = require('../../services/services');
+const services = require('../../services/services');
+const {Invoice}=require('../../models/invoice.model')
 
-const bookRoomT = async (req, res) => {
+const bookRoom = async (req, res) => {
+    const { roomID, paymentMethod } = req.body;
+    const cusID = req.cusID;
+
+    console.log("Request body:", req.body);
+    console.log("Customer ID:", cusID); 
+
+    if (!roomID || !paymentMethod || !cusID) {
+        console.error("Missing required fields:", { roomID, paymentMethod, cusID });
+        return res.status(403).json({ message: 'Missing required fields' });
+    }
     try {
-        const { cusID, roomID, total, paymentMethod } = req.body;
-
-        if (!cusID || !roomID || !total || !paymentMethod) {
-            return res.status(400).json({ message: 'Missing required fields' });
+        const newInvoice = { paymentMethod };
+        const result = await services.bookRoom(newInvoice, cusID, roomID);
+        if (result.status === 'OK') {
+            return res.status(200).json(result);
+        } else {
+            return res.status(500).json(result);
         }
-
-        const result = await BookRoomService.bookRoomT(req.body, cusID, roomID);
-        return res.status(201).json(result);
     } catch (e) {
-        return res.status(500).json({ message: e.message });
+        console.error('Error booking room in controller:', e);
+        res.status(500).json(e);
     }
 };
 
-const createRoomT = async (req, res) => {
+const getInvoicesWithReceipts = async (req, res) => {
     try {
-        console.log(req.body);
-        const { numberOfBeds, typeOfRoom, money, revenue } = req.body;
-        if (!numberOfBeds || !typeOfRoom || !money || !revenue) {
-            return res.status(400).json({ message: 'Input is required' });
-        }
-        const result = await BookRoomService.createRoomT(req.body);
-        return res.status(201).json(result);
+        const invoices = await Invoice.find().populate('receiptID');
+        res.status(200).json(invoices);
     } catch (e) {
-        return res.status(500).json({ message: e.message });
+        console.error('Error fetching invoices with receipts:', e);
+        res.status(500).json(e);
     }
 };
-
-
-const bookRoom=async(req,res)=>{
-    try{
-        const { cusID, roomID, total, paymentMethod } = req.body
-    }catch(e){
-
-    }
-}
-module.exports = { bookRoomT, createRoomT };
+module.exports = { 
+    bookRoom,
+    getInvoicesWithReceipts
+ };

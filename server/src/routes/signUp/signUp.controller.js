@@ -28,21 +28,26 @@ const signUpOwner=async(req,res)=>{
         return res.status(201).json(result)
         }
      catch(e){
+        console.log(e)
         return res.status(500).json({message:e})
     }
 
 }
-const signInOwner=async(req,res)=>{
-    console.log(req.body)
-    const {email, passWord}=req.body
+
+const signInOwner = async (req, res) => {
+    console.log(req.body);
+    const { email, passWord } = req.body;
 
     if (!email || !passWord) {
-        return res.status(400).json({ message: 'Email and password are required' });
-    } else if (!validateEmail(email)) {
-        return res.status(400).json({ message: 'Invalid email' });
+        return res.status(403).json({ message: 'Email and password are required' });
     }
-    const result = await signUpService.signInOwner(req.body);
-    return res.status(200).json(result);
+    try {
+        const result = await signUpService.signInOwner(req.body);
+        return res.status(200).json(result);
+    } catch (e) {
+        console.error('Error signing in owner:', e);
+        return res.status(e.status || 500).json(e);
+    }
 }
 
 function validateBirthDate(birthDate){
